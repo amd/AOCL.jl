@@ -1,6 +1,6 @@
 name = "AOCL"
 uuid = "f52889c3-24a9-4d04-95e9-8e965a4fc4c7"
-version = "5.1.0"
+version = "5.3.1"
 
 [deps]
 AOCL_jll = "b124843c-0c82-53c8-91a7-62bfdd90e290"
@@ -17,7 +17,8 @@ Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-julia = "1.9"
+AOCL_jll = "5.3.1"
+julia = "1.10"
 
 [targets]
 test = ["Dates", "Distributed", "Printf", "Random", "REPL", "Sockets", "Test"]

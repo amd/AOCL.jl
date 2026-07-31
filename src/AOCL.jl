@@ -17,16 +17,12 @@ function lbt_forward_to_aocl()
     end
 
     if Base.USE_BLAS64
-        # Load ILP64 forwards
-        BLAS.lbt_forward(aocl_blas_ilp64; clear=true)
-        BLAS.lbt_forward(aocl_lapack_ilp64)
-
-        # Load LP64 forwards
-        BLAS.lbt_forward(aocl_blas_lp64)
-        BLAS.lbt_forward(aocl_lapack_lp64)
+        # Load ILP64 forwards used by Julia.
+        BLAS.lbt_forward(AOCL_jll.libaocl64; clear=true)
+        # Also expose LP64 forwards.
+        BLAS.lbt_forward(AOCL_jll.libaocl)
     else
-        BLAS.lbt_forward(aocl_blas_lp64; clear = true)
-        BLAS.lbt_forward(aocl_lapack_lp64)
+        BLAS.lbt_forward(AOCL_jll.libaocl; clear=true)
     end
 end
 

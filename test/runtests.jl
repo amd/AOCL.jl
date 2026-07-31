@@ -76,17 +76,16 @@ function debug_missing_function()
 end
 LinearAlgebra.BLAS.lbt_set_default_func(@cfunction(debug_missing_function, Cvoid, ()))
 
-function blas()
-    libs = BLAS.get_config().loaded_libs
+function blas(interface=Base.USE_BLAS64 ? :ilp64 : :lp64)
+    libs = filter(lib -> lib.interface == interface, BLAS.get_config().loaded_libs)
+    isempty(libs) && return :unknown
     lib = lowercase(basename(first(libs).libname))
     if contains(lib, "openblas")
         return :openblas
-    elseif contains(lib, "blis-mt")
-        if BLAS.USE_BLAS64
-            return :aocl_blas_ilp64
-        else
-            return :aocl_blas_lp64
-        end
+    elseif contains(lib, "libaocl64")
+        return :aocl_ilp64
+    elseif lib == "libaocl.so"
+        return :aocl_lp64
     else
         return :unknown
     end
@@ -96,7 +95,8 @@ end
     @testset "Sanity Tests" begin
         @test blas() == :openblas
         using AOCL
-        @test blas() == :aocl_blas_ilp64 || blas() == :aocl_blas_lp64
+        @test blas(:lp64) == :aocl_lp64
+        Base.USE_BLAS64 && @test blas(:ilp64) == :aocl_ilp64
         @test LinearAlgebra.peakflops() > 0
     end
 

@@ -20,14 +20,22 @@ ones at runtime. Note that the AOCL package has to be loaded in every new Julia
 process. Upon quitting and restarting, Julia will start with the default
 OpenBLAS.
 
-```Julia
+The recommended installation uses the package from Julia's General registry:
+
+```julia
+julia> using Pkg
+julia> Pkg.add("AOCL")
+```
+
+If installing the AMD-hosted version use its repository URL explicitly:
+
+```julia
 julia> using Pkg;
-julia> Pkg.add(url="https://github.com/amd/AOCL_jll.jl");
 julia> Pkg.add(url="https://github.com/amd/AOCL.jl");
 ```
 
-It is important to have `AOCL_jll` installed before installing `AOCL.jl`, as the
-latter depends on the former.
+`AOCL_jll` is available from Julia's General registry and will be installed
+automatically as a dependency.
 
 Note: The package is only available on Linux at the moment.
 
@@ -45,6 +53,6 @@ julia> using AOCL
 julia> BLAS.get_config()
 LinearAlgebra.BLAS.LBTConfig
 Libraries:
-├ [ILP64] libblis-mt.so
-└ [ILP64] libflame.so
+├ [ILP64] libaocl64.so
+└ [ LP64] libaocl.so
 ```
