@@ -132,3 +132,50 @@ end
         @test sum(abs, A \ B) ≈ 24.772054506344045
     end
 end
+
+# Run the BLAS and LAPACK tests of the LinearAlgebra stdlib against AOCL, using
+# Julia's own test driver to get multithreaded, distributed execution and to
+# restart workers that trip over the testing RSS limit. The workers only pick up
+# AOCL if the test sources load it, so prepend the import to `testdefs.jl`, which
+# every worker includes.
+julia_test_dir = joinpath(Sys.BINDIR, Base.DATAROOTDIR, "julia", "test")
+if !isdir(julia_test_dir)
+    @warn "Julia's test sources are not installed, skipping the stdlib tests." julia_test_dir
+else
+    mktempdir() do dir
+        cp(julia_test_dir, dir; force=true)
+
+        testdefs_path = joinpath(dir, "testdefs.jl")
+        chmod(testdefs_path, 0o644)
+        testdefs_content = read(testdefs_path, String)
+        open(testdefs_path, write=true) do io
+            println(io, "using AOCL")
+            println(io, testdefs_content)
+        end
+
+        # Run against a copy of the LinearAlgebra tests, so that the known
+        # failure below can be marked without touching the Julia installation.
+        # `test_path` in `choosetests.jl` resolves every name that is not a
+        # stdlib relative to the directory holding the test driver.
+        linalg_dir = joinpath(dir, "aocl_linalg")
+        cp(joinpath(dirname(dirname(Base.find_package("LinearAlgebra"))), "test"), linalg_dir)
+
+        # AOCL's `dlacpy` leaves the destination untouched when the destination
+        # has fewer rows than the source. Reference LAPACK does no argument
+        # checking there and copies rows `1:min(j, m)` of each column `j`, so the
+        # call is well defined for `uplo = 'U'`. The single and complex variants
+        # are unaffected. Julia tests this since 1.12.
+        lapack_path = joinpath(linalg_dir, "lapack.jl")
+        lapack_content = read(lapack_path, String)
+        chmod(lapack_path, 0o644)
+        write(lapack_path, replace(lapack_content,
+            "@test B == view(triu(A), 1:n, 1:n)" =>
+                "@test B == view(triu(A), 1:n, 1:n) broken = (elty === Float64)"))
+
+        # Every worker loads its own copy of AOCL, and BLIS defaults to one
+        # thread per core, so leaving threading alone oversubscribes the machine
+        # badly for tests that gain nothing from it.
+        cmd = `$(Base.julia_cmd()) --project=$(Base.active_project()) $(dir)/runtests.jl aocl_linalg/blas aocl_linalg/lapack`
+        run(addenv(cmd, "BLIS_NUM_THREADS" => "1"))
+    end
+end
