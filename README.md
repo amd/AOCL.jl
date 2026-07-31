@@ -56,3 +56,7 @@ Libraries:
 ├ [ILP64] libaocl64.so
 └ [ LP64] libaocl.so
 ```
+
+## Support
+Please contact [toolchainsupport@amd.com](mailto:toolchainsupport@amd.com) for
+questions, feature requests, or issues.
